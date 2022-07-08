@@ -1,5 +1,5 @@
 const ColorBlock = '#cb2026';
-const ImgUrl = 'https://ohstem-public.s3.ap-southeast-1.amazonaws.com/extensions/AITT-VN/yolobit_extension_rover_advance/images/';
+const ImgUrl = 'https://ohstem-public.s3.ap-southeast-1.amazonaws.com/extensions/AITT-VN/yolobit_extension_rover_advanced/images/';
 
 // Robot Move
 
