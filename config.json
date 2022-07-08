@@ -1,0 +1,21 @@
+{
+    "name": "ROVER ADVANCED",
+    "description": "Mục mở rộng dành cho bộ kit xe điều khiển Rover - Advanced Level",
+    "libs": [
+        "rover.py",
+        "rover_hcsr04.py",
+        "rover_pcf8574.py",
+        "rover_ir.py",
+        "rover_motion.py",
+        "main.py"
+    ],
+    "blocks": [
+        "definition.js"
+    ],
+    "toolbox": "toolbox.xml",
+    "languages": {
+        "en": "languages/en.js",
+        "vi": "languages/vi.js"
+    },
+    "poster": "poster.png"
+}
