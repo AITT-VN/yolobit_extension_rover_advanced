@@ -19,8 +19,10 @@ GYRO_ZOUT_H  = const(0x47)
 TEMP_OUT_H   = const(0X41)
 
 class Motion:
-    def __init__(self, address=0x68):
-        self._i2c = SoftI2C(scl=Pin(22), sda=Pin(21)) 
+    def __init__(self, i2c, address=0x68):
+        #self._i2c = SoftI2C(scl=Pin(22), sda=Pin(21)) 
+        #self._addr = address
+        self._i2c = i2c
         self._addr = address
 
         #Close the sleep mode
@@ -285,4 +287,4 @@ class Motion:
         finally:
             return total > shake_threshold
 
-motion = Motion()
+#motion = Motion(i2c)

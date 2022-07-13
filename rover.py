@@ -4,16 +4,20 @@ from machine import *
 import time
 from utility import *
 import rover_pcf8574
+import rover_motion
 import rover_hcsr04
 from rover_ir import *
-from motion import *
 
 # IR receiver
 rover_ir_rx = IR_RX(Pin(pin4.pin, Pin.IN))
 
+# MPU check connection
+mpu_detected = True
+
 class Rover():
 
     def __init__(self):
+        global mpu_detected
         # motor pins
         self.ina1 = PWM(Pin(pin12.pin), freq=500, duty=0)
         self.ina2 = PWM(Pin(pin2.pin), freq=500, duty=0)
@@ -36,7 +40,17 @@ class Rover():
         except:
             say('Line IR sensors not detected')
             self.pcf = None
-
+        
+        # MPU6050
+        try:
+            self.motion = rover_motion.Motion(
+                machine.SoftI2C(
+                    scl=machine.Pin(22), 
+                    sda=machine.Pin(21)), 0x68)
+        except:
+            self.motion = None
+            mpu_detected = False
+        
         # ultrasonic
         self.ultrasonic = rover_hcsr04.HCSR04(pin13.pin, pin14.pin)
 
@@ -48,7 +62,10 @@ class Rover():
 
         self.stop()
 
-        say('Rover setup done!')
+        if mpu_detected == True:
+            say('Rover setup done with MPU6050!')
+        else:
+            say('Rover setup done!')
    
     #------------------------------ROBOT PRIVATE MOVING METHODS--------------------------#
 
@@ -61,10 +78,10 @@ class Rover():
             return self.__go_straight(speed, t, forward)
         else:
             if forward:
-                self.stop()
+                #self.stop() stop() isn't work in rover. So we need to test it more...
                 self.set_wheel_speed(speed, speed)
             else:
-                self.stop()
+                #self.stop()
                 self.set_wheel_speed(-speed, -speed)
 
             if t != None :
@@ -72,8 +89,8 @@ class Rover():
                 self.stop()
     
     def __calibrate_speed(self, speed, error=0.2, error_rotate=10, speed_factor=3):
-        motion.updateZ()
-        z = motion.get_angleZ()
+        self.motion.updateZ()
+        z = self.motion.get_angleZ()
         if abs(z) >= 360:
             z = (abs(z) - 360) * z / abs(z)
         if abs(z) > 180:
@@ -94,12 +111,13 @@ class Rover():
         try:
             self.stop()
             if need_calib:
-                motion.calibrateZ()
+                self.motion.calibrateZ()
 
             if forward == False:
                 speed = -speed
 
-            motion.begin()
+            self.motion.begin()
+            time.sleep(0.1) # sleep to calib right value
             self.set_wheel_speed(speed, speed)
             t0 = time.time_ns()
             while time.time_ns() - t0 < t*1e9:
@@ -136,7 +154,7 @@ class Rover():
         try:
             self.stop()
             if need_calib:
-                motion.calibrateZ()
+                self.motion.calibrateZ()
 
             z0 = 0.0
             t0 = time.time_ns()
@@ -147,10 +165,10 @@ class Rover():
             t_speed_changed = t0
             z_speed_changed = z0
 
-            motion.begin()
+            self.motion.begin()
             while (time.time_ns() - t_start) < limit_time:
-                motion.updateZ()
-                z_now = motion.get_angleZ(True)
+                self.motion.updateZ()
+                z_now = self.motion.get_angleZ(True)
                 if z_now + error >= angle:
                     break
                 
@@ -193,10 +211,18 @@ class Rover():
     #------------------------------ROBOT PUBLIC DRIVING METHODS--------------------------#
 
     def forward(self, speed=None, t=None, straight=False):
-        self.__go(True, speed, t, straight)
+        global mpu_detected
+        if mpu_detected == True:
+            self.__go(True, speed, t, straight)
+        else:
+            self.__go(True, speed, t, False)
 
     def backward(self, speed=None, t=None, straight=False):
-        self.__go(False, speed, t, straight)
+        global mpu_detected
+        if mpu_detected == True:
+            self.__go(False, speed, t, straight)
+        else:
+            self.__go(False, speed, t, False)
 
     def turn_left(self, speed=None, t=None):
         self.__turn(False, speed, t)
@@ -204,11 +230,23 @@ class Rover():
     def turn_right(self, speed=None, t=None):
         self.__turn(True, speed, t)
 
-    def turn_left_angle(self, angle, speed=30, need_calib=False):
-        self.__turn_angle(angle, False, speed, need_calib)
+    def turn_left_angle(self, angle, speed=15, need_calib=False):
+        global mpu_detected
+        print(mpu_detected)
+        if mpu_detected == True:
+            self.__turn_angle(angle, False, speed, need_calib)
+        else:
+            t = angle/90
+            self.__turn(False, speed, t)
 
-    def turn_right_angle(self, angle, speed=30, need_calib=False):
-        self.__turn_angle(angle, True, speed, need_calib)
+    def turn_right_angle(self, angle, speed=15, need_calib=False):
+        global mpu_detected
+        print(mpu_detected)
+        if mpu_detected == True:
+            self.__turn_angle(angle, True, speed, need_calib)
+        else:
+            t = angle/90
+            self.__turn(True, speed, t)
 
     def stop(self):
         self.set_wheel_speed(0, 0)
@@ -392,5 +430,3 @@ rover = Rover()
 
 def stop_all(): # override stop function called by app
   rover.stop()
-
-

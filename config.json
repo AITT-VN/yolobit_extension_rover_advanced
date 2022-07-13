@@ -1,6 +1,6 @@
 {
-    "name": "ROVER ADVANCED",
-    "description": "Mục mở rộng dành cho bộ kit xe điều khiển Rover - Advanced Level",
+    "name": "ROVER",
+    "description": "Mục mở rộng dành cho robot lập trình Rover",
     "libs": [
         "rover.py",
         "rover_hcsr04.py",
